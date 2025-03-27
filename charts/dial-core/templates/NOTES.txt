@@ -1,0 +1,24 @@
+CHART NAME: {{ .Chart.Name  }}
+CHART VERSION: {{ .Chart.Version  }}
+APP VERSION: {{ .Chart.AppVersion  }}
+
+** Please be patient while the chart is being deployed **
+
+{{- if .Values.diagnosticMode.enabled }}
+The chart has been deployed in diagnostic mode. All probes have been disabled.
+
+Get the list of pods by executing:
+
+  kubectl get pods --namespace {{ include "common.names.namespace" . | quote }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+Access the pod you want to debug by executing
+
+  kubectl exec --namespace {{ include "common.names.namespace" . | quote }} -ti <NAME OF THE POD> -- bash
+{{- end }}
+
+{{- if not .Values.configuration.encryption.existingSecret -}}
+  {{- $passwordValidationErrors := include "dialCore.values.requirePasswords" (dict "secret" (include "dialCore.encryptionSecretName" .) "context" $) -}}
+  {{- include "common.errors.upgrade.passwords.empty" (dict "validationErrors" (list $passwordValidationErrors) "context" $) -}}
+{{- end }}
+
+{{- include "dialCore.validateValues" . }}
