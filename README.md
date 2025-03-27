@@ -1,7 +1,4 @@
-# ai-dial-helm
-
-Umbrella chart for DIAL solution
-# 官方文档 
+# AI-DIAL官方文档 
 
 https://docs.epam-rail.com/
 
@@ -22,92 +19,289 @@ Follow these steps to configure Microsoft Entra ID:
 
 Note: sAMAccountName and on-premises GroupSID attributes are available only on group objects synced from Active Directory. They aren't available on groups created in Microsoft Entra ID or Office 365. Applications configured in Microsoft Entra ID to get synced on-premises group attributes get them for synced groups only.
 
-## Getting started
+# dial
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+![Version: 5.2.0](https://img.shields.io/badge/Version-5.2.0-informational?style=flat-square) ![AppVersion: 1.23.0](https://img.shields.io/badge/AppVersion-1.23.0-informational?style=flat-square)
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Umbrella chart for DIAL solution
 
-## Add your files
+## Prerequisites
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+- Helm 3.8.0+
+- PV provisioner support in the underlying infrastructure (optional)
+- Ingress controller support in the underlying infrastructure (optional)
 
+## Requirements
+
+Kubernetes: `>=1.23.0-0`
+
+| Repository | Name | Version |
+|------------|------|---------|
+| https://charts.bitnami.com/bitnami | keycloak | 24.4.3 |
+| https://charts.epam-rail.com | core(dial-core) | 4.1.0 |
+| https://charts.epam-rail.com | authhelper(dial-extension) | 1.2.0 |
+| https://charts.epam-rail.com | chat(dial-extension) | 1.2.0 |
+| https://charts.epam-rail.com | themes(dial-extension) | 1.2.0 |
+| https://charts.epam-rail.com | openai(dial-extension) | 1.2.0 |
+| https://charts.epam-rail.com | bedrock(dial-extension) | 1.2.0 |
+| https://charts.epam-rail.com | vertexai(dial-extension) | 1.2.0 |
+| https://charts.epam-rail.com | dial(dial-extension) | 1.2.0 |
+| https://charts.epam-rail.com | assistant(dial-extension) | 1.2.0 |
+| oci://registry-1.docker.io/bitnamicharts | common | 2.29.0 |
+
+## Installing the Chart
+
+To install the chart with the release name `my-release`:
+
+```console
+kubectl create namesapce dial
+helm install epam-dial -n dial
 ```
-cd existing_repo
-git remote add origin https://git.epam.com/brain_wu/ai-dial-helm.git
-git branch -M main
-git push -uf origin main
+
+The command deploys AI DIAL on the Kubernetes cluster with default configuration. The [Parameters](#parameters) section lists the parameters that can be configured during installation.
+
+## Examples
+
+Due to flexibility of the system, it's impossible to define default values for all parameters and cover all use cases.\
+However, we provide a set of [examples](examples) that can be used as a good starting point for your own configuration.
+
+## Uninstalling the Chart
+
+To uninstall/delete the `my-release` deployment:
+
+```console
+helm delete my-release
 ```
 
-## Integrate with your tools
+The command removes all the Kubernetes components associated with the chart and deletes the release.
 
-- [ ] [Set up project integrations](https://git.epam.com/brain_wu/ai-dial-helm/-/settings/integrations)
+**NOTE**: Persistent Volumes created by StatefulSets won't be deleted automatically
 
-## Collaborate with your team
+## Parameters
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
-## Test and Deploy
+```console
+helm install my-release dial/dial --set chat.image.tag=latest
+```
 
-Use the built-in continuous integration in GitLab.
+Alternatively, a YAML file that specifies the values for the above parameters can be provided while installing the chart. For example:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+```yaml
+# values.yaml file content
+chat:
+  image:
+    tag: latest
+```
 
-***
+```console
+helm install my-release dial/dial -f values.yaml
+```
 
-# Editing this README
+**NOTE**: You can use the default [values.yaml](values.yaml)
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+## Values
 
-## Suggestions for a good README
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| assistant.commonLabels."app.kubernetes.io/component" | string | `"application"` |  |
+| assistant.enabled | bool | `false` | Enable/disable ai-dial-assistant |
+| assistant.image.repository | string | `"epam/ai-dial-assistant"` |  |
+| assistant.image.tag | string | `"0.7.0"` |  |
+| assistant.livenessProbe.enabled | bool | `true` |  |
+| assistant.readinessProbe.enabled | bool | `true` |  |
+| authhelper.commonLabels."app.kubernetes.io/component" | string | `"authentication"` |  |
+| authhelper.containerPorts.http | int | `4088` |  |
+| authhelper.enabled | bool | `false` | Enable/disable ai-dial-auth-helper. Set `keycloak.enabled: true` before enabling this. |
+| authhelper.image.repository | string | `"epam/ai-dial-auth-helper"` |  |
+| authhelper.image.tag | string | `"0.3.0"` |  |
+| bedrock.commonLabels."app.kubernetes.io/component" | string | `"adapter"` |  |
+| bedrock.enabled | bool | `false` | Enable/disable ai-dial-adapter-bedrock |
+| bedrock.image.repository | string | `"epam/ai-dial-adapter-bedrock"` |  |
+| bedrock.image.tag | string | `"0.22.0"` |  |
+| bedrock.livenessProbe.enabled | bool | `true` |  |
+| bedrock.readinessProbe.enabled | bool | `true` |  |
+| bedrock.secrets | object | `{}` |  |
+| chat.commonLabels."app.kubernetes.io/component" | string | `"application"` |  |
+| chat.containerPorts.http | int | `3000` |  |
+| chat.enabled | bool | `true` | Enable/disable ai-dial-chat |
+| chat.image.repository | string | `"epam/ai-dial-chat"` |  |
+| chat.image.tag | string | `"0.25.0"` |  |
+| chat.livenessProbe.enabled | bool | `true` |  |
+| chat.livenessProbe.failureThreshold | int | `6` |  |
+| chat.livenessProbe.httpGet.path | string | `"/api/health"` |  |
+| chat.readinessProbe.enabled | bool | `true` |  |
+| chat.readinessProbe.failureThreshold | int | `6` |  |
+| chat.readinessProbe.httpGet.path | string | `"/api/health"` |  |
+| core.enabled | bool | `true` | Enable/disable ai-dial-core |
+| core.image.tag | string | `"0.24.0"` |  |
+| dial.commonLabels."app.kubernetes.io/component" | string | `"adapter"` |  |
+| dial.enabled | bool | `false` | Enable/disable ai-dial-adapter-dial |
+| dial.image.repository | string | `"epam/ai-dial-adapter-dial"` |  |
+| dial.image.tag | string | `"0.4.0"` |  |
+| dial.livenessProbe.enabled | bool | `true` |  |
+| dial.readinessProbe.enabled | bool | `true` |  |
+| extraDeploy | list | `[]` |  |
+| keycloak.enabled | bool | `false` | Enable/disable keycloak |
+| keycloak.extraEnvVars[0].name | string | `"KC_FEATURES"` |  |
+| keycloak.extraEnvVars[0].value | string | `"token-exchange,admin-fine-grained-authz"` |  |
+| keycloak.keycloakConfigCli.enabled | bool | `true` |  |
+| keycloak.keycloakConfigCli.extraEnvVars[0].name | string | `"IMPORT_VARSUBSTITUTION_ENABLED"` |  |
+| keycloak.keycloakConfigCli.extraEnvVars[0].value | string | `"true"` |  |
+| keycloak.postgresql.enabled | bool | `true` |  |
+| keycloak.proxy | string | `"edge"` |  |
+| openai.commonLabels."app.kubernetes.io/component" | string | `"adapter"` |  |
+| openai.enabled | bool | `false` | Enable/disable ai-dial-adapter-openai |
+| openai.image.repository | string | `"epam/ai-dial-adapter-openai"` |  |
+| openai.image.tag | string | `"0.21.0"` |  |
+| openai.livenessProbe.enabled | bool | `true` |  |
+| openai.readinessProbe.enabled | bool | `true` |  |
+| themes.commonLabels."app.kubernetes.io/component" | string | `"webserver"` |  |
+| themes.containerPorts.http | int | `8080` |  |
+| themes.containerSecurityContext.runAsUser | int | `101` |  |
+| themes.enabled | bool | `true` | Enable/disable ai-dial-chat-themes |
+| themes.image.repository | string | `"epam/ai-dial-chat-themes"` |  |
+| themes.image.tag | string | `"0.9.1"` |  |
+| themes.livenessProbe.enabled | bool | `true` |  |
+| themes.podSecurityContext.fsGroup | int | `101` |  |
+| themes.readinessProbe.enabled | bool | `true` |  |
+| vertexai.commonLabels."app.kubernetes.io/component" | string | `"adapter"` |  |
+| vertexai.enabled | bool | `false` | Enable/disable ai-dial-adapter-vertexai |
+| vertexai.image.repository | string | `"epam/ai-dial-adapter-vertexai"` |  |
+| vertexai.image.tag | string | `"0.17.2"` |  |
+| vertexai.livenessProbe.enabled | bool | `true` |  |
+| vertexai.readinessProbe.enabled | bool | `true` |  |
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## Upgrading
 
-## Name
-Choose a self-explaining name for your project.
+### To 5.0.0
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+> [!TIP]
+> If you don't use Keycloak, disregard the information below and proceed with Helm upgrade as usual.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+> [!CAUTION]
+> The upgrade includes **BREAKING CHANGES** and require **MANUAL ACTIONS**.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+In this version, we've updated the following underlying dependencies which require manual actions:
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+- `bitnami/keycloak` Helm chart version bumped from `16.1.7` to `24.4.3`
+  - `keycloak` version bumped from `22.0.3` to `26.0.8`
+  - `bitnami/postgresql` Helm chart from `12.12.9` to `16.4.3`
+    - `postgresql` version bumped from `15.4.0` to `17.2.0`
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Please refer to the official documentation for more details:
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+- [bitnami/keycloak helm chart changelog](https://github.com/bitnami/charts/blob/main/bitnami/keycloak/CHANGELOG.md), [upgrade notes](https://github.com/bitnami/charts/blob/main/bitnami/keycloak/README.md#upgrading)
+- [bitnami/postgresql helm chart changelog](https://github.com/bitnami/charts/blob/main/bitnami/postgresql/CHANGELOG.md), [upgrade notes](https://github.com/bitnami/charts/blob/main/bitnami/postgresql/README.md#upgrading)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+> [!IMPORTANT]
+> We'd prepared a brief generic upgrade guide below, however, we can not be sure it'll cover all the cases. The steps may vary depending on your configuration and deployment specifics.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+1. Stop Keycloak
+1. Backup Postgres database, e.g. open Postgres container shell and run (replace `PGPASSWORD` with the actual password):
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+    ```bash
+    export PGUSER=postgres
+    export PGPASSWORD=YouShouldReallyChangeThis
+    export PGDUMP_DIR=/bitnami/postgresql
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+    pg_dumpall --clean --if-exists --load-via-partition-root --quote-all-identifiers --no-password > ${PGDUMP_DIR}/pg_dumpall-$(date '+%Y-%m-%d-%H-%M').pgdump
+    ```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+1. Run `helm upgrade` command with usual arguments and **new** `5.X.X` chart version, with addition of special values:
+    - add values
 
-## License
-For open source projects, say how it is licensed.
+      ```yaml
+      keycloak:
+        diagnosticMode:
+          enabled: true
+        keycloakConfigCli:
+          enabled: false
+        postgresql:
+          diagnosticMode:
+            enabled: true
+      ```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+    - delete `declarative-user-profile` from `keycloak.extraEnvVars.*.KC_FEATURES` if it's present
+    - delete all occurrences of `bruteForceProtected` option from `keycloak.keycloakConfigCli.configuration` or `realm.yaml` file if it's present/used
+1. After `helm upgrade` is finished, open Postgres container shell and run (replace `PGPASSWORD` with the actual password):
+
+    ```bash
+    # rename old data dir
+    mv /var/lib/postgresql/data /var/lib/postgresql/data_old
+
+    # run postgres manually
+    nohup /opt/bitnami/scripts/postgresql/entrypoint.sh /opt/bitnami/scripts/postgresql/run.sh > /dev/null 2>&1 &
+
+    # restore databases from dump (replace `PGPASSWORD` with the actual password)
+    export PGUSER=postgres
+    export PGPASSWORD=PASSWORD_PLACEHOLDER
+    export PGDUMP_DIR=/bitnami/postgresql
+
+    psql -d postgres -f ${PGDUMP_DIR}/pg_dumpall-YYYY-MM-DD-HH-MM.pgdump
+    ```
+
+1. Run `helm upgrade` command with usual arguments, **new** `5.X.X` chart version, but without special values
+    - delete values
+
+      ```yaml
+      keycloak:
+        diagnosticMode:
+          enabled: true
+        keycloakConfigCli:
+          enabled: false
+        postgresql:
+          diagnosticMode:
+            enabled: true
+      ```
+
+1. Verify DIAL is up and running correctly
+
+### To 4.0.0
+
+Bumping the major version to highlight Redis upgrade in `dial-core` helm chart. No actions required, however you may want to check [Redis® 7.4 release notes](https://raw.githubusercontent.com/redis/redis/7.4/00-RELEASENOTES) and [dial-core-4.0.0 release notes](https://github.com/epam/ai-dial-helm/releases/tag/dial-core-4.0.0) for specific details.
+
+### To 3.0.0
+
+In this version we have to reflect `ai-dial-core` [application configuration parameters renaming](https://github.com/epam/ai-dial-core/pull/455) in version `0.15.1+` by renaming several values in this chart.
+
+- `core.configuration.encryption.password` parameter is renamed to `core.configuration.encryption.secret`
+- `core.configuration.encryption.salt` parameter is changed to `core.configuration.encryption.key`
+
+### How to upgrade to version 3.0.0
+
+a) If using encryption Kubernetes secret created by the chart:
+
+1. Update the parameters you have in your current deployment values (e.g. `values.yaml` file or set via `--set`) according to the changes below:
+     - `core.configuration.encryption.password` --> `core.configuration.encryption.secret`
+     - `core.configuration.encryption.salt` --> `core.configuration.encryption.key`
+1. Delete the `*-encryption` secret, e.g. (replace `my-release` with the actual release name):
+
+    ```console
+    kubectl delete secret my-release-dial-core-encryption
+    ```
+
+1. Proceed with the helm upgrade as usual, e.g.:
+
+    ```console
+    helm upgrade my-release dial/dial -f values.yaml
+    ```
+
+b) If using your own managed Kubernetes secret (`core.configuration.encryption.existingSecret` is set):
+
+1. Rename keys in your existing secret:
+
+    - `aidial.encryption.password` --> `aidial.encryption.secret`
+    - `aidial.encryption.salt` --> `aidial.encryption.key`
+
+    You can update your existing secret to rename or move the keys using the following one-liner command (replace `<your-existing-secret-name>` and `<namespace>` with the actual values):
+
+    ```console
+      kubectl get secret <your-existing-secret-name> -o yaml -n <namespace> | jq '.data["aidial.encryption.secret"] = .data["aidial.encryption.password"] | .data["aidial.encryption.key"] = .data["aidial.encryption.salt"] | del(.data["aidial.encryption.password"], .data["aidial.encryption.salt"])' | kubectl replace -f -
+    ```
+
+1. Proceed with the helm upgrade as usual, e.g.:
+
+    ```console
+    helm upgrade my-release dial/dial -f values.yaml
+    ```
