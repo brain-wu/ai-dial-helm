@@ -1,6 +1,26 @@
 # ai-dial-helm
 
+Umbrella chart for DIAL solution
+# 官方文档 
 
+https://docs.epam-rail.com/
+
+## Configure Microsoft Entra ID
+Note: Replace <chat_url> with the actual address of your AI DIAL Chat application.
+
+Follow these steps to configure Microsoft Entra ID:
+
+1. Create an Application: refer to Microsoft documentation to learn how to register an application. Set the following parameters:
+      a.Name
+      b.Supported account types
+      c.Platform: Web
+      d.Redirect URI: https://<chat_url>/api/auth/callback/azure-ad
+2. After registering an application, obtain and save Application (client) ID and Directory (tenant) ID - you will need them to configure AI DIAL. Refer to Microsoft documentation.
+3. Create and save a Client secret: in the Certificates & secrets/Client secret section, create New client secret and save its value. Refer to Microsoft documentation.
+4. (Optional) Create a Group and add members: once the application integration is set up, create the necessary Group and add members. Refer to Microsoft documentation.
+5. (Optional) Configure ID Token: in the Token Configuration section, Add Groups claim and customize which groups you want to include and where (access, ID token). Refer to Microsoft documentation.
+
+Note: sAMAccountName and on-premises GroupSID attributes are available only on group objects synced from Active Directory. They aren't available on groups created in Microsoft Entra ID or Office 365. Applications configured in Microsoft Entra ID to get synced on-premises group attributes get them for synced groups only.
 
 ## Getting started
 

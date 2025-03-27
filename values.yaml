@@ -1,0 +1,257 @@
+# This is umbrella chart. It means that it doesn't contain resources itself, but combines several charts as dependencies.
+# Configuration values represented here are either complimentary or override values from dependency charts for example purposes.
+# Check dependency charts for hints and details about specific values, their defaults and extra configuration.
+
+extraDeploy: []
+
+### keycloak configuration ##
+# ref: https://github.com/bitnami/charts/blob/main/bitnami/keycloak/README.md
+keycloak:
+  # -- Enable/disable keycloak
+  enabled: false
+  proxy: edge
+  # auth:
+  #   adminUser: "admin"
+  #   adminPassword: "youReallyNeedToChangeThis"
+  extraEnvVars:
+    - name: KC_FEATURES
+      value: "token-exchange,admin-fine-grained-authz"
+  postgresql:
+    enabled: true
+    # auth:
+    #   postgresPassword: "youReallyNeedToChangeThis"
+    #   password: "youReallyNeedToChangeThis"
+  keycloakConfigCli:
+    enabled: true
+    extraEnvVars:
+      - name: IMPORT_VARSUBSTITUTION_ENABLED
+        value: "true"
+    # configuration:
+    #   realm.yaml: |
+    #     yourRealmConfig
+
+### ai-dial-auth-helper configuration ###
+authhelper:
+  # -- Enable/disable ai-dial-auth-helper.
+  # Set `keycloak.enabled: true` before enabling this.
+  enabled: false
+  commonLabels:
+    app.kubernetes.io/component: "authentication"
+  image:
+    repository: epam/ai-dial-auth-helper
+    tag: 0.3.0
+  containerPorts:
+    http: 4088
+  # env:
+  #   SERVER_HOSTURL: ""
+  #   OAUTH2_PROVIDERURI: ""
+  # secrets:
+  #   OAUTH2_CLIENTSECRET: ""
+
+### ai-dial-core configuration ###
+core:
+  # -- Enable/disable ai-dial-core
+  enabled: true
+  image:
+    tag: 0.24.0
+  env:
+    aidial.config.files: '["/mnt/secrets-store/aidial.config.json"]'
+    aidial.identityProviders.azure.jwksUrl: "https://login.microsoftonline.com/<azure_tenant_id>/discovery/v2.0/keys"
+    aidial.identityProviders.azure.rolePath: "groups"
+    aidial.identityProviders.azure.audience: "<azure_client_id>"
+    aidial.identityProviders.azure.issuerPattern: '^https:\/\/sts\.windows\.net.+$'
+    aidial.identityProviders.azure.loggingKey: "sub"
+    aidial.identityProviders.azure.loggingSalt: "loggingSalt"
+
+  secrets:
+    aidial.config.json: |
+      {
+        "routes": {},
+        "models": {
+          "qwen:0.5b": {
+              "type": "chat",
+              "displayName": "qwen:0.5b",
+              "endpoint": "http://ollama.dial.svc.cluster.local:11434/v1/chat/completions"
+          },
+          "deepseek-r1:1.5b": {
+              "type": "chat",
+              "displayName": "deepseek-r1:1.5b",
+              "endpoint": "http://ollama.dial.svc.cluster.local:11434/v1/chat/completions"
+          },
+          "llama3.2:3b": {
+              "type": "chat",
+              "displayName": "llama3.2:3b",
+              "endpoint": "http://ollama.dial.svc.cluster.local:11434/v1/chat/completions"
+          }
+        },
+        "keys": {
+          "dial_api_key": {
+            "project": "TEST-PROJECT",
+            "role": "default"
+          }
+        },
+        "roles": {
+          "default": {
+            "limits": {
+              "qwen:0.5b": {},
+              "deepseek-r1:1.5b": {},
+              "llama3.2:3b": {}
+            }
+          }
+        }
+      }
+  extraVolumes:
+    - name: config
+      secret:
+        secretName: '{{ template "dialCore.names.fullname" . }}'
+        items:
+          - key: aidial.config.json
+            path: aidial.config.json
+  extraVolumeMounts:
+    - name: config
+      mountPath: "/mnt/secrets-store/aidial.config.json"
+      subPath: aidial.config.json
+      readOnly: true
+
+### ai-dial-chat configuration ###
+chat:
+  # -- Enable/disable ai-dial-chat
+  enabled: true
+  commonLabels:
+    app.kubernetes.io/component: "application"
+  image:
+    repository: epam/ai-dial-chat
+    tag: 0.25.0
+  env:
+    DIAL_API_HOST: "http://{{ .Release.Name }}-core.dial.svc.cluster.local"
+    THEMES_CONFIG_HOST: "http://{{ .Release.Name }}-themes.dial.svc.cluster.local"
+    # ENABLED_FEATURES: "conversations-section,prompts-section,top-settings,top-clear-conversation,top-chat-info,top-chat-model-settings,empty-chat-settings,header,footer,request-api-key,report-an-issue,likes,input-files,attachments-manager"
+    ENABLED_FEATURES: "conversations-section,prompts-section,top-settings,top-clear-conversation,top-chat-info,top-chat-model-settings,empty-chat-settings,header,footer,likes,conversations-sharing,prompts-sharing,input-files,attachments-manager,conversations-publishing,prompts-publishing"
+    NEXTAUTH_SECRET: "secret"
+    NEXTAUTH_URL: "https://<chat_url>"
+    AUTH_AZURE_AD_CLIENT_ID: "<azure_client_id>"
+    AUTH_AZURE_AD_SECRET: "<azure_tenant_id>"
+    AUTH_AZURE_AD_TENANT_ID: "<azure_client_secret>"
+    AUTH_AZURE_AD_SCOPE: "openid profile <azure_client_id>/.default email offline_access"
+    KEEP_ALIVE_TIMEOUT: "600000"
+    RECENT_MODELS_IDS: "qwen:0.5b,deepseek-r1:1.5b,llama3.2:3b"
+  containerPorts:
+    http: 3000
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /api/health
+    failureThreshold: 6
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /api/health
+    failureThreshold: 6
+
+
+### ai-dial-chat-themes configuration ###
+themes:
+  # -- Enable/disable ai-dial-chat-themes
+  enabled: true
+  commonLabels:
+    app.kubernetes.io/component: "webserver"
+  image:
+    repository: epam/ai-dial-chat-themes
+    tag: 0.9.1
+  containerPorts:
+    http: 8080
+  podSecurityContext:
+    fsGroup: 101
+  containerSecurityContext:
+    runAsUser: 101
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+
+### ai-dial-adapter-openai configuration ###
+openai:
+  # -- Enable/disable ai-dial-adapter-openai
+  enabled: false
+  commonLabels:
+    app.kubernetes.io/component: "adapter"
+  image:
+    repository: epam/ai-dial-adapter-openai
+    tag: 0.21.0
+  # env:
+  #   DIAL_USE_FILE_STORAGE: "true"
+  #   DIAL_URL: "http://{{ .Release.Name }}-core"
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+
+### ai-dial-adapter-bedrock configuration ###
+bedrock:
+  # -- Enable/disable ai-dial-adapter-bedrock
+  enabled: false
+  commonLabels:
+    app.kubernetes.io/component: "adapter"
+  image:
+    repository: epam/ai-dial-adapter-bedrock
+    tag: 0.22.0
+  # env:
+  #   DIAL_URL: "http://{{ .Release.Name }}-core"
+  secrets:
+    {}
+    # AWS_DEFAULT_REGION: "us-east-1"
+    # AWS_ACCESS_KEY_ID: ""
+    # AWS_SECRET_ACCESS_KEY: ""
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+
+### ai-dial-adapter-vertexai configuration ###
+vertexai:
+  # -- Enable/disable ai-dial-adapter-vertexai
+  enabled: false
+  commonLabels:
+    app.kubernetes.io/component: "adapter"
+  image:
+    repository: epam/ai-dial-adapter-vertexai
+    tag: 0.17.2
+  # env:
+  #   DIAL_URL: "http://{{ .Release.Name }}-core"
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+
+### ai-dial-adapter-dial configuration ###
+dial:
+  # -- Enable/disable ai-dial-adapter-dial
+  enabled: false
+  commonLabels:
+    app.kubernetes.io/component: "adapter"
+  image:
+    repository: epam/ai-dial-adapter-dial
+    tag: 0.4.0
+  # env:
+  #   DIAL_URL: "http://{{ .Release.Name }}-core"
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+
+### ai-dial-assistant configuration ###
+assistant:
+  # -- Enable/disable ai-dial-assistant
+  enabled: false
+  commonLabels:
+    app.kubernetes.io/component: "application"
+  image:
+    repository: epam/ai-dial-assistant
+    tag: 0.7.0
+  # env:
+  #   OPENAI_API_BASE: "http://{{ .Release.Name }}-core"
+  #   TOOLS_SUPPORTING_DEPLOYMENTS: "gpt-4-turbo"
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
